@@ -1,7 +1,7 @@
 use crate::business::*;
 use serde_json::{json, Value};
 
-/// Call 根据方法名和JSON参数字符串调用对应函数（同步版本）
+/// Call 根据方法名和JSON参数字符串调用对应函数
 /// method: 要调用的方法名
 /// paramJSON: 包含参数的JSON字符串
 /// 返回: 包含执行结果的JSON字符串
@@ -17,22 +17,8 @@ pub fn call(method: &str, param_json: &str) -> String {
     execute(method, &params)
 }
 
-/// Call 异步版本，用于 WASM 中需要异步执行的调用
-#[cfg(target_arch = "wasm32")]
-pub async fn call_async(method: &str, param_json: &str) -> String {
-    // 解析JSON参数为map
-    let params = match parse_params(param_json) {
-        Ok(Value::Object(map)) => Value::Object(map),
-        Ok(_) => return error_response("Parameters must be a JSON object"),
-        Err(e) => return error_response(&e),
-    };
-
-    // 调用异步Execute函数执行具体逻辑
-    execute_async(method, &params).await
-}
-
 /// Execute 执行具体函数调用并返回结果 JSON
-/// 通用的同步执行逻辑，对所有方法统一处理，无特殊逻辑
+/// 通用的同步执行逻辑，对所有方法统一处理
 pub fn execute(method: &str, params: &Value) -> String {
     let result = match method {
         "Increase" => {
@@ -74,50 +60,44 @@ pub fn execute(method: &str, params: &Value) -> String {
     result.to_string()
 }
 
-/// 异步Execute版本（仅在 WASM 中可用）
-/// 通用的异步执行逻辑，对所有方法统一处理，无特殊逻辑
-/// 使用异步函数版本来支持需要异步操作的函数（如 sum_long_running_async）
+/// 异步 Call（仅在 WASM 中可用）
+/// 在异步上下文中执行，支持需要异步操作的函数
 #[cfg(target_arch = "wasm32")]
-pub async fn execute_async(method: &str, params: &Value) -> String {
-    let result = match method {
-        "Increase" => {
-            json!({ "result": increase() })
-        }
-        "Sum" => {
-            // 提取参数
-            let a = match extract_int_param(params, "a") {
-                Ok(v) => v,
-                Err(e) => return error_response(&e),
-            };
-
-            let b = match extract_int_param(params, "b") {
-                Ok(v) => v,
-                Err(e) => return error_response(&e),
-            };
-
-            json!({ "result": sum(a, b) })
-        }
-        "SumLongRunning" => {
-            // 提取参数
-            let a = match extract_int_param(params, "a") {
-                Ok(v) => v,
-                Err(e) => return error_response(&e),
-            };
-
-            let b = match extract_int_param(params, "b") {
-                Ok(v) => v,
-                Err(e) => return error_response(&e),
-            };
-
-            // 在 WASM 中，使用异步版本的 sum_long_running 以支持异步 sleep
-            json!({ "result": sum_long_running_async(a, b).await })
-        }
-        _ => {
-            return error_response(&format!("Unknown method: {}", method));
-        }
+pub async fn call_async(method: &str, param_json: &str) -> String {
+    // 解析JSON参数为map
+    let params = match parse_params(param_json) {
+        Ok(Value::Object(map)) => Value::Object(map),
+        Ok(_) => return error_response("Parameters must be a JSON object"),
+        Err(e) => return error_response(&e),
     };
 
-    result.to_string()
+    // 调用异步Execute函数执行具体逻辑
+    execute_async(method, &params).await
+}
+
+/// 异步Execute版本（仅在 WASM 中可用）
+/// 只对 SumLongRunning 特殊处理（使用异步版本支持 sleep）
+/// 其他函数直接调用同步版本
+#[cfg(target_arch = "wasm32")]
+pub async fn execute_async(method: &str, params: &Value) -> String {
+    // SumLongRunning 特殊处理：使用异步版本以支持 sleep
+    if method == "SumLongRunning" {
+        let a = match extract_int_param(params, "a") {
+            Ok(v) => v,
+            Err(e) => return error_response(&e),
+        };
+
+        let b = match extract_int_param(params, "b") {
+            Ok(v) => v,
+            Err(e) => return error_response(&e),
+        };
+
+        let result = sum_long_running_async(a, b).await;
+        return json!({ "result": result }).to_string();
+    }
+
+    // 其他所有函数直接调用同步版本
+    execute(method, params)
 }
 
 /// 将 JSON 字符串解析为 Value

@@ -17,8 +17,16 @@ pub fn sum(a: i32, b: i32) -> i32 {
 }
 
 /// SumLongRunning 模拟耗时操作，返回两个数之和
-/// 非 WASM: 使用 thread::sleep
-/// WASM: 直接返回（WASM 中不支持同步 sleep）
+/// 
+/// 非 WASM 平台（macOS, iOS, Android, Linux）：
+///   使用 thread::sleep 实现同步延迟，无论同步还是异步调用都会阻塞等待
+/// 
+/// WASM 平台的限制：
+///   WASM 运行在单线程的 JavaScript 环境中，不支持同步阻塞（thread::sleep）
+///   同步函数无法调用异步 sleep（.await），因为 Rust 语法限制
+///   因此在同步调用中无法实现延迟，只能直接返回
+///   
+///   异步调用的延迟通过 sum_long_running_async 实现
 #[cfg(not(target_arch = "wasm32"))]
 pub fn sum_long_running(a: i32, b: i32) -> i32 {
     use crate::sleep::sleep_millis;
@@ -28,11 +36,12 @@ pub fn sum_long_running(a: i32, b: i32) -> i32 {
 
 #[cfg(target_arch = "wasm32")]
 pub fn sum_long_running(a: i32, b: i32) -> i32 {
+    // WASM 同步调用无法实现 sleep，见上方注释
     a + b
 }
 
 /// SumLongRunning 异步版本（仅在 WASM 中可用）
-/// 在异步上下文中执行耗时操作
+/// 在异步上下文中可以使用 .await 调用异步 sleep
 #[cfg(target_arch = "wasm32")]
 pub async fn sum_long_running_async(a: i32, b: i32) -> i32 {
     use crate::sleep::sleep_async;

@@ -154,4 +154,4 @@ wasm_loader.js:38 [WASM] Error calling rust_call(SumLongRunning): RuntimeError: 
 1. 好好参考 flutter_go_caller/packages/flutter_go_caller/go/call.go  flutter_go_caller/packages/flutter_go_caller/go/main.go ， SumLongRunning 本身就该是耗时操作， 不需要管同步异步调用， 进来就耗时，
 
 1. 总之你纠结了那么久最终结论就是同步调用无法sleep？确实无法那就注释说清楚然后放弃， 不要瞎实现，
-1. packages/flutter_rust_caller/rust/src/call.rs:81 不要两份execute, 非要特殊处理
+1. packages/flutter_rust_caller/rust/src/call.rs:81 不要两份execute, 非要特殊处理也只应该特殊处理一个SumLongRunning，async版只处理这一个函数， else直接调用非async版，然后非async版直接不处理这个函数， 
