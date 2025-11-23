@@ -72,3 +72,44 @@ flutter_go_caller/packages/flutter_go_caller/macos/Classes/flutter_go_caller.c�
 1. 我最终需要的是js全局添加函数 rust_call/rust_call_async，添加变量rustWasmReady，以便 packages/flutter_rust_caller/lib/src/rust_web.dart 使用，你看情况添加wasm导出，最好单独一个文件，
 1. 你看情况调整 apps/example/web/index.html， 加载apps/example/web/prebuild/libflutter_rust_caller.wasm并创建这三个变量，
 
+1. 你不要管测试， 你测不了， 写完了让我测试，
+1. 报错了， wasm_loader.js:117 [WASM] Failed to initialize WASM: TypeError: WebAssembly.instantiate(): Imports argument must be present and must be an object
+(anonymous)	@	wasm_loader.js:117
+Promise.catch		
+(anonymous)	@	wasm_loader.js:116
+
+1. 报错， 
+[WASM] Starting initialization...
+wasm_loader.js:45 [WASM] Initialization failed: TypeError: WebAssembly.instantiate(): Import #0 "__wbindgen_placeholder__": module is not an object or function
+init	@	wasm_loader.js:45
+await in init		
+(anonymous)	@	wasm_loader.js:116
+wasm_loader.js:117 [WASM] Failed to initialize WASM: TypeError: WebAssembly.instantiate(): Import #0 "__wbindgen_placeholder__": module is not an object or function
+(anonymous)	@	wasm_loader.js:117
+Promise.catch		
+(anonymous)	@	wasm_loader.js:116
+
+1. 还是一堆的报错， 
+[WASM] Starting initialization...
+wasm_loader.js:13 [WASM] Module loaded successfully
+wasm_loader.js:56 [WASM] Global functions registered: window.rust_call, window.rust_call_async
+wasm_loader.js:57 [WASM] Initialization complete
+wasm_loader.js:27 [WASM] Error calling rust_call(Increase): TypeError: Cannot read properties of undefined (reading '__wbindgen_add_to_stack_pointer')
+    at Module.rust_call_wasm (flutter_rust_caller.js:170:14)
+    at window.rust_call (wasm_loader.js:24:35)
+    at testIncrease (wasm_test.html:200:31)
+    at HTMLButtonElement.onclick (wasm_test.html:114:67)
+wasm_loader.js:27 [WASM] Error calling rust_call(Sum): TypeError: Cannot read properties of undefined (reading '__wbindgen_add_to_stack_pointer')
+    at Module.rust_call_wasm (flutter_rust_caller.js:170:14)
+    at window.rust_call (wasm_loader.js:24:35)
+    at testSum (wasm_test.html:216:31)
+    at HTMLButtonElement.onclick (wasm_test.html:125:59)
+wasm_loader.js:27 [WASM] Error calling rust_call(SumLongRunning): TypeError: Cannot read properties of undefined (reading '__wbindgen_add_to_stack_pointer')
+    at Module.rust_call_wasm (flutter_rust_caller.js:170:14)
+    at window.rust_call (wasm_loader.js:24:35)
+    at testSumLongRunning (wasm_test.html:232:31)
+    at HTMLButtonElement.onclick (wasm_test.html:137:75)
+window.rust_call	@	wasm_loader.js:27
+testSumLongRunning	@	wasm_test.html:232
+onclick	@	wasm_test.html:137
+1. 不是，我寻思现在wasm-bindgen已经生成了js绑定代码， 就不需要你那个apps/example/web/wasm_loader.js了吧，至少应该需要完全重写使用上apps/example/web/prebuild/flutter_rust_caller.js吧？

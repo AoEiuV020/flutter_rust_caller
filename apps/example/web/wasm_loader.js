@@ -1,60 +1,29 @@
-// WASM 加载器 - 初始化 Rust WASM 模块和全局函数
+// WASM 加载器 - 使用 wasm-bindgen 生成的 flutter_rust_caller.js
 
-class WasmLoader {
-  constructor() {
-    this.wasmModule = null;
-    this.ready = false;
-  }
+/**
+ * 初始化 WASM 模块并设置全局函数
+ */
+async function initWasm() {
+  try {
+    console.log('[WASM] Starting initialization...');
+    
+    // 动态导入 wasm-bindgen 生成的 JavaScript 模块
+    // flutter_rust_caller.js 导出 default 初始化函数和具名导出函数
+    const wasmModule = await import('./prebuild/flutter_rust_caller.js');
+    
+    // 调用默认导出的初始化函数，加载和初始化 WASM
+    // 它会自动从 import.meta.url 相对路径加载 flutter_rust_caller_bg.wasm
+    const wasmInit = wasmModule.default;
+    await wasmInit();
+    
+    console.log('[WASM] Module loaded and initialized successfully');
 
-  /**
-   * 初始化 WASM 模块并设置全局函数
-   * @returns {Promise<void>}
-   */
-  async init() {
-    try {
-      console.log('[WASM] Starting initialization...');
-      
-      // 加载 WASM 文件
-      const wasmPath = 'prebuild/libflutter_rust_caller.wasm';
-      const response = await fetch(wasmPath);
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch WASM file: ${wasmPath} (${response.status})`);
-      }
+    // 获取导出的 Rust 函数
+    const rustCallWasm = wasmModule.rust_call_wasm;
+    const rustCallAsyncWasm = wasmModule.rust_call_async_wasm;
 
-      // 使用 WebAssembly.instantiateStreaming 加载
-      const wasmBuffer = await response.arrayBuffer();
-      const wasmModule = await WebAssembly.instantiate(wasmBuffer);
-      this.wasmModule = wasmModule.instance;
-      
-      console.log('[WASM] Module loaded successfully');
-
-      // 设置全局函数和变量
-      this._setupGlobalFunctions();
-      
-      // 标记为就绪
-      this.ready = true;
-      window.rustWasmReady = true;
-      
-      console.log('[WASM] Initialization complete');
-      
-      // 触发自定义事件，通知 Flutter 应用 WASM 已准备好
-      window.dispatchEvent(new CustomEvent('wasmReady', { detail: { ready: true } }));
-      
-    } catch (error) {
-      console.error('[WASM] Initialization failed:', error);
-      window.rustWasmReady = false;
-      throw error;
-    }
-  }
-
-  /**
-   * 在全局 window 对象上设置 Rust 调用函数
-   * @private
-   */
-  _setupGlobalFunctions() {
-    const self = this;
-
+    // 在全局 window 上设置函数
+    
     /**
      * 同步调用 Rust 函数
      * @param {string} method - 要调用的方法名
@@ -62,14 +31,8 @@ class WasmLoader {
      * @returns {string} - JSON 格式的返回值
      */
     window.rust_call = (method, paramJSON) => {
-      if (!self.ready || !self.wasmModule) {
-        throw new Error('WASM module is not ready');
-      }
-      
       try {
-        // 调用 WASM 导出的函数
-        // wasm-bindgen 为每个导出的函数生成 JavaScript 包装器
-        const result = self.wasmModule.rust_call_wasm(method, paramJSON);
+        const result = rustCallWasm(method, paramJSON);
         return result;
       } catch (error) {
         console.error(`[WASM] Error calling rust_call(${method}):`, error);
@@ -84,13 +47,8 @@ class WasmLoader {
      * @returns {Promise<string>} - 返回 Promise，resolve 为 JSON 格式的返回值
      */
     window.rust_call_async = async (method, paramJSON) => {
-      if (!self.ready || !self.wasmModule) {
-        throw new Error('WASM module is not ready');
-      }
-      
       try {
-        // 异步调用 WASM 导出的函数
-        const result = self.wasmModule.rust_call_async_wasm(method, paramJSON);
+        const result = rustCallAsyncWasm(method, paramJSON);
         // 如果是 Promise，等待其解决
         if (result instanceof Promise) {
           return await result;
@@ -103,23 +61,32 @@ class WasmLoader {
       }
     };
 
+    // 设置全局变量标记 WASM 已准备好
+    window.rustWasmReady = true;
+    
     console.log('[WASM] Global functions registered: window.rust_call, window.rust_call_async');
+    console.log('[WASM] Initialization complete');
+    
+    // 触发自定义事件，通知 Flutter 应用 WASM 已准备好
+    window.dispatchEvent(new CustomEvent('wasmReady', { detail: { ready: true } }));
+    
+  } catch (error) {
+    console.error('[WASM] Initialization failed:', error);
+    window.rustWasmReady = false;
+    throw error;
   }
 }
-
-// 创建全局加载器实例
-window.wasmLoader = new WasmLoader();
 
 // 在 DOM 加载完成后初始化 WASM
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    window.wasmLoader.init().catch(error => {
+    initWasm().catch(error => {
       console.error('[WASM] Failed to initialize WASM:', error);
     });
   });
 } else {
   // DOM 已加载，直接初始化
-  window.wasmLoader.init().catch(error => {
+  initWasm().catch(error => {
     console.error('[WASM] Failed to initialize WASM:', error);
   });
 }

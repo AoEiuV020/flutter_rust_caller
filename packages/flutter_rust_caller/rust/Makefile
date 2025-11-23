@@ -211,7 +211,10 @@ linux:
 web:
 	mkdir -p "$(PREBUILD_PATH)"
 	cargo build $(CARGO_FLAGS) --target wasm32-unknown-unknown
-	cp "target/wasm32-unknown-unknown/$(CARGO_PROFILE)/$(PROJECT_NAME).wasm" "$(PREBUILD_PATH)/${LIB_NAME}.wasm"
+	wasm-bindgen "target/wasm32-unknown-unknown/$(CARGO_PROFILE)/$(PROJECT_NAME).wasm" \
+		--out-dir "$(PREBUILD_PATH)" \
+		--target web \
+		--weak-refs
 
 # ============== Cleanup ==============
 
