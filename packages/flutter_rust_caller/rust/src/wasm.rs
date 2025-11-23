@@ -3,8 +3,6 @@
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
-#[cfg(target_arch = "wasm32")]
-use wasm_bindgen_futures::spawn_local;
 
 use crate::call::{call, call_async};
 
@@ -18,22 +16,11 @@ pub fn rust_call_wasm(method: &str, param_json: &str) -> String {
 
 /// 异步调用 Rust 函数
 /// 接受方法名和 JSON 参数字符串，返回 Promise
-/// 通用的异步包装，将异步调用转换为 Promise，无任何特殊处理
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
-pub fn rust_call_async_wasm(method: &str, param_json: &str) -> js_sys::Promise {
-    let method_str = method.to_string();
-    let param_str = param_json.to_string();
-
-    js_sys::Promise::new(&mut |resolve, _reject| {
-        let method = method_str.clone();
-        let param = param_str.clone();
-        
-        spawn_local(async move {
-            let result = call_async(&method, &param).await;
-            let _ = resolve.call1(&JsValue::null(), &JsValue::from_str(&result));
-        });
-    })
+pub async fn rust_call_async_wasm(method: &str, param_json: &str) -> String {
+    // 用wasm_bindgen_futures::spawn_local也没差，计算密集依然会卡ui，
+    call_async(method, param_json).await
 }
 
 /// 设置全局 WASM 准备标志
