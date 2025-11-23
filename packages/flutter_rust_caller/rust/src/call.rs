@@ -17,40 +17,73 @@ pub fn call(method: &str, param_json: &str) -> String {
     execute(method, &params)
 }
 
+/// CallAsync 异步版本，供 WASM 使用
+/// 对于异步操作，可以在此处实现异步逻辑
+pub async fn call_async(method: &str, param_json: &str) -> String {
+    // 解析JSON参数为map
+    let params = match parse_params(param_json) {
+        Ok(Value::Object(map)) => Value::Object(map),
+        Ok(_) => return error_response("Parameters must be a JSON object"),
+        Err(e) => return error_response(&e),
+    };
+
+    // 调用ExecuteAsync函数执行具体逻辑
+    execute_async(method, &params).await
+}
+
 /// Execute 执行具体函数调用并返回结果 JSON
 /// 通用的同步执行逻辑，对所有方法统一处理
 pub fn execute(method: &str, params: &Value) -> String {
     let result = match method {
-        "Increase" => {
-            json!({ "result": increase() })
+        "Multiply" => {
+            // 提取参数：base, multiplier
+            let base = match extract_int_param(params, "base") {
+                Ok(v) => v,
+                Err(e) => return error_response(&e),
+            };
+
+            let multiplier = match extract_int_param(params, "multiplier") {
+                Ok(v) => v,
+                Err(e) => return error_response(&e),
+            };
+
+            json!({ "result": multiply(base, multiplier) })
         }
-        "Sum" => {
-            // 提取参数
-            let a = match extract_int_param(params, "a") {
+        "PowerMultiply" => {
+            // 提取参数：base, exponent_base, exponent
+            let base = match extract_int_param(params, "base") {
                 Ok(v) => v,
                 Err(e) => return error_response(&e),
             };
 
-            let b = match extract_int_param(params, "b") {
+            let exponent_base = match extract_int_param(params, "exponent_base") {
                 Ok(v) => v,
                 Err(e) => return error_response(&e),
             };
 
-            json!({ "result": sum(a, b) })
+            let exponent = match extract_int_param(params, "exponent") {
+                Ok(v) => v,
+                Err(e) => return error_response(&e),
+            };
+
+            json!({ "result": power_multiply(base, exponent_base, exponent) })
         }
-        "SumLongRunning" => {
+        "NextPrime" => {
             // 提取参数
-            let a = match extract_int_param(params, "a") {
+            let base = match extract_int_param(params, "base") {
                 Ok(v) => v,
                 Err(e) => return error_response(&e),
             };
 
-            let b = match extract_int_param(params, "b") {
+            let count = match extract_int_param(params, "count") {
                 Ok(v) => v,
                 Err(e) => return error_response(&e),
             };
 
-            json!({ "result": sum_long_running(a, b) })
+            json!({ "result": next_prime(base, count) })
+        }
+        "GetLastPrime" => {
+            json!({ "result": get_last_prime() })
         }
         _ => {
             return error_response(&format!("Unknown method: {}", method));
@@ -60,43 +93,11 @@ pub fn execute(method: &str, params: &Value) -> String {
     result.to_string()
 }
 
-/// 异步 Call（仅在 WASM 中可用）
-/// 在异步上下文中执行，支持需要异步操作的函数
-#[cfg(target_arch = "wasm32")]
-pub async fn call_async(method: &str, param_json: &str) -> String {
-    // 解析JSON参数为map
-    let params = match parse_params(param_json) {
-        Ok(Value::Object(map)) => Value::Object(map),
-        Ok(_) => return error_response("Parameters must be a JSON object"),
-        Err(e) => return error_response(&e),
-    };
-
-    // 调用异步Execute函数执行具体逻辑
-    execute_async(method, &params).await
-}
-
-/// 异步Execute版本（仅在 WASM 中可用）
-/// 只对 SumLongRunning 特殊处理（使用异步版本支持 sleep）
-/// 其他函数直接调用同步版本
-#[cfg(target_arch = "wasm32")]
+/// ExecuteAsync 异步执行函数调用
+/// 基于同步版本，可以支持需要异步的方法
 pub async fn execute_async(method: &str, params: &Value) -> String {
-    // SumLongRunning 特殊处理：使用异步版本以支持 sleep
-    if method == "SumLongRunning" {
-        let a = match extract_int_param(params, "a") {
-            Ok(v) => v,
-            Err(e) => return error_response(&e),
-        };
-
-        let b = match extract_int_param(params, "b") {
-            Ok(v) => v,
-            Err(e) => return error_response(&e),
-        };
-
-        let result = sum_long_running_async(a, b).await;
-        return json!({ "result": result }).to_string();
-    }
-
-    // 其他所有函数直接调用同步版本
+    // 当前所有方法都可以同步执行，所以直接调用同步版本
+    // 如果未来需要真正的异步方法，可以在此处添加特殊处理
     execute(method, params)
 }
 
@@ -107,10 +108,10 @@ fn parse_params(param_json: &str) -> Result<Value, String> {
 }
 
 /// 从参数中提取整数参数
-fn extract_int_param(params: &Value, key: &str) -> Result<i32, String> {
+fn extract_int_param(params: &Value, key: &str) -> Result<i64, String> {
     match params.get(key) {
         Some(Value::Number(n)) => match n.as_i64() {
-            Some(v) => Ok(v as i32),
+            Some(v) => Ok(v),
             None => Err(format!("Parameter {} must be an integer", key)),
         },
         _ => Err(format!("Missing or invalid parameter {}", key)),
@@ -127,17 +128,35 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_call_sum() {
-        let result = call("Sum", r#"{"a": 5, "b": 3}"#);
+    fn test_call_multiply() {
+        let result = call("Multiply", r#"{"base": 5, "multiplier": 10}"#);
         let parsed: Value = serde_json::from_str(&result).unwrap();
-        assert_eq!(parsed["result"], 8);
+        assert_eq!(parsed["result"], 50);
     }
 
     #[test]
-    fn test_call_increase() {
-        let result = call("Increase", "{}");
+    fn test_call_power_multiply() {
+        let result = call("PowerMultiply", r#"{"base": 10, "exponent_base": 10, "exponent": 10}"#);
         let parsed: Value = serde_json::from_str(&result).unwrap();
-        assert!(parsed["result"].is_number());
+        assert_eq!(parsed["result"], 100000000000i64);
+    }
+
+    #[test]
+    fn test_call_next_prime() {
+        let result = call("NextPrime", r#"{"base": 10, "count": 1}"#);
+        let parsed: Value = serde_json::from_str(&result).unwrap();
+        assert_eq!(parsed["result"], 11);
+    }
+
+    #[test]
+    fn test_call_get_last_prime() {
+        // 先调用 NextPrime 以设置值
+        call("NextPrime", r#"{"base": 20, "count": 1}"#);
+        
+        // 然后获取保存的值
+        let result = call("GetLastPrime", "{}");
+        let parsed: Value = serde_json::from_str(&result).unwrap();
+        assert_eq!(parsed["result"], 23);
     }
 
     #[test]
@@ -149,14 +168,14 @@ mod tests {
 
     #[test]
     fn test_call_invalid_json() {
-        let result = call("Sum", "invalid json");
+        let result = call("Multiply", "invalid json");
         let parsed: Value = serde_json::from_str(&result).unwrap();
         assert!(parsed["error"].is_string());
     }
 
     #[test]
     fn test_call_missing_param() {
-        let result = call("Sum", r#"{"a": 5}"#);
+        let result = call("Multiply", r#"{"base": 5}"#);
         let parsed: Value = serde_json::from_str(&result).unwrap();
         assert!(parsed["error"].is_string());
     }

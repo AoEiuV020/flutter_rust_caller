@@ -66,14 +66,14 @@ mod tests {
 
     #[test]
     fn test_rust_call_with_valid_params() {
-        let method = CString::new("Sum").unwrap();
-        let params = CString::new(r#"{"a": 10, "b": 20}"#).unwrap();
+        let method = CString::new("Multiply").unwrap();
+        let params = CString::new(r#"{"base": 10, "multiplier": 20}"#).unwrap();
 
         let result_ptr = rust_call(method.as_ptr(), params.as_ptr());
         assert!(!result_ptr.is_null());
 
         let result_str = unsafe { CStr::from_ptr(result_ptr).to_string_lossy() };
-        assert!(result_str.contains("30"));
+        assert!(result_str.contains("200"));
 
         // Clean up
         rust_free_string(result_ptr);
@@ -81,7 +81,7 @@ mod tests {
 
     #[test]
     fn test_rust_call_with_null_pointer() {
-        let method = CString::new("Sum").unwrap();
+        let method = CString::new("Multiply").unwrap();
         let result_ptr = rust_call(std::ptr::null(), method.as_ptr());
         assert!(!result_ptr.is_null());
 

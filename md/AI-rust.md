@@ -161,3 +161,46 @@ wasm_loader.js:38 [WASM] Error calling rust_call(SumLongRunning): RuntimeError: 
 1. packages/flutter_rust_caller/README.md 太简陋了， 参考 flutter_go_caller/packages/flutter_go_caller/README.md 来写， 
 1. 两边的README都加上关于 ios/Classes/flutter_rust_caller.c
 macos/Classes/flutter_rust_caller.c 删除include相关说明， 
+
+1. 放弃sleep，把sleep相关彻底删除， 
+1. 示例修改， 不要sum了， 所有sum都删除，
+1. 添加计算质数函数，最简单粗暴的那种直接循环判断，不要任何优化，
+1. 调整 apps/example/lib/main.dart 示例，原有的功能删除， 但是ui保留，就是数字和圈圈，功能改成新的质数计算，
+1. 新功能包含，
+- 点击数字乘以10,传入当前数字和10,
+- 点击数字乘以10的10次方，传入当前数字和两个10,一个底数一个指数，
+- 点击求当前数字的下一个质数，传入当前数字和1代表下一个，
+- 每次计算质数结果返回显示到ui的同时在rust层静态保存，
+- 取出静态保存的数字显示出来覆盖flutter层的数字，
+
+1. packages/flutter_rust_caller/rust/src/wasm.rs 别把异步支持给删了，async还是要支持的， 
+1. increase/COUNTER 都可以删了， 和新功能无关的都可以删了， 
+1. apps/example/lib/main.dart 没改吗？别这么偷懒， 我说的要一点一点全部执行， 
+
+1. 数字的范围太低了， 至少要支持long，64位，
+1. 我说了ui保留转圈的，你干嘛非要删掉， 就给我显示一个数字一个转圈，别瞎改，
+1. 前面说的”取出静态保存的数字显示出来覆盖flutter层的数字，“这也是一个按钮的功能， 点下去才获取，
+1. ”点击数字乘以10的10次方，传入当前数字和两个10,一个底数一个指数，“，这个函数是三个参数， 
+1. packages/flutter_rust_caller/rust/src/business.rs:44 谁要你暂不处理了，我要的就是一个一个算质数，直到next，
+1. flutter层下一个质数的按钮改成求下100个质数，
+
+1. 不是你到底还记不记得我的需求， 
+- 点击数字乘以10,传入当前数字和10, 这里是一个函数， 两个参数， 直接相乘，
+- 点击数字乘以10的10次方，传入当前数字和两个10,一个底数一个指数，这里是三个参数， 返回a乘以b的c次方，
+- 点击求当前数字的下一个质数，传入当前数字和1代表下一个，这里是两个参数，
+- 每次计算质数结果返回显示到ui的同时在rust层静态保存，
+- 点击取出静态保存的数字显示出来覆盖flutter层的数字，
+
+1. 你是听不懂吗， 我说ui保留转圈，原本的ui是一直转圈的， 不会消失的， 你干嘛非要改掉，
+1. packages/flutter_rust_caller/rust/src/wasm.rs:23 为什么改成直接await了， 原本的promise为什么不用了， use wasm_bindgen_futures不使用还被警告了，
+
+1. 还报着错啊你在干嘛， 我把wasm回滚了， 没事别乱改， 
+1. 使用make验证rust，
+
+1. 我™已经把wasm回滚到之前正常的版本了，你干嘛非要改坏掉， 
+
+1. 你到底想干嘛， 为什么把好不容易调好的rust_call_async相关支持给删除了？
+
+1. 你™我说了rust_call_async_wasm不能直接await， 我已经回滚好了你干嘛非要改掉，
+
+1. 艹，我让你make，你翻来覆去改我的wasm然后又问我要做什么？

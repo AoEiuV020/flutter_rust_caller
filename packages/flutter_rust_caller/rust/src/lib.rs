@@ -1,16 +1,14 @@
 pub mod business;
 pub mod call;
 pub mod ffi;
-pub mod sleep;
 
 #[cfg(target_arch = "wasm32")]
 pub mod wasm;
 
 // Re-export modules for public use
 pub use business::*;
-pub use call::{call, execute};
+pub use call::{call, call_async, execute, execute_async};
 pub use ffi::{rust_call, rust_free_string};
-pub use sleep::*;
 
 #[cfg(target_arch = "wasm32")]
 pub use wasm::{rust_call_wasm, rust_call_async_wasm, wasm_ready};
