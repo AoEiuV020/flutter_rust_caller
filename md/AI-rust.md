@@ -67,3 +67,8 @@ flutter_go_caller/packages/flutter_go_caller/macos/Classes/flutter_go_caller.c�
 你在go的readme补上说明， rust这边追加处理一下， 
 1. 你到最后也没运行script/linux_multi_arch_docker.sh， 我说过几遍了？运行脚本使用docker生成linux预编译库， 
 
+
+1. wasm靠谱？我听说需要wasm_bindgen你都没写，
+1. 我最终需要的是js全局添加函数 rust_call/rust_call_async，添加变量rustWasmReady，以便 packages/flutter_rust_caller/lib/src/rust_web.dart 使用，你看情况添加wasm导出，最好单独一个文件，
+1. 你看情况调整 apps/example/web/index.html， 加载apps/example/web/prebuild/libflutter_rust_caller.wasm并创建这三个变量，
+
