@@ -157,3 +157,7 @@ wasm_loader.js:38 [WASM] Error calling rust_call(SumLongRunning): RuntimeError: 
 1. packages/flutter_rust_caller/rust/src/call.rs:81 不要两份execute, 非要特殊处理也只应该特殊处理一个SumLongRunning，async版只处理这一个函数， else直接调用非async版，然后非async版直接不处理这个函数， 
 
 1. 对比 flutter_go_caller/packages/flutter_go_caller/go/Makefile ， rust这边的ios编译漏了模拟器版本， 产物参考 flutter_go_caller/packages/flutter_go_caller/prebuild/iOS ， 应该包含 ios-x86_64-sim ios-arm64-sim ios-arm64， 我说过了rust这边makefile要所有任务目标都和go那边一致，
+
+1. packages/flutter_rust_caller/README.md 太简陋了， 参考 flutter_go_caller/packages/flutter_go_caller/README.md 来写， 
+1. 两边的README都加上关于 ios/Classes/flutter_rust_caller.c
+macos/Classes/flutter_rust_caller.c 删除include相关说明， 
