@@ -134,19 +134,19 @@ android: android-armv7a android-arm64 android-x86 android-x86_64
 # ============== iOS Targets ==============
 
 ios-x86_64-sim:
-	mkdir -p "$(PREBUILD_PATH)/x86_64"
+	mkdir -p "$(PREBUILD_PATH)/iphonesimulator/x86_64"
 	cargo build $(CARGO_FLAGS) --target x86_64-apple-ios
-	cp "target/x86_64-apple-ios/$(CARGO_PROFILE)/lib$(PROJECT_NAME).a" "$(PREBUILD_PATH)/x86_64/${LIB_NAME}.a"
+	cp "target/x86_64-apple-ios/$(CARGO_PROFILE)/lib$(PROJECT_NAME).a" "$(PREBUILD_PATH)/iphonesimulator/x86_64/${LIB_NAME}.a"
 
 ios-arm64-sim:
-	mkdir -p "$(PREBUILD_PATH)/arm64"
+	mkdir -p "$(PREBUILD_PATH)/iphonesimulator/arm64"
 	cargo build $(CARGO_FLAGS) --target aarch64-apple-ios-sim
-	cp "target/aarch64-apple-ios-sim/$(CARGO_PROFILE)/lib$(PROJECT_NAME).a" "$(PREBUILD_PATH)/arm64/${LIB_NAME}.a"
+	cp "target/aarch64-apple-ios-sim/$(CARGO_PROFILE)/lib$(PROJECT_NAME).a" "$(PREBUILD_PATH)/iphonesimulator/arm64/${LIB_NAME}.a"
 
 ios-arm64:
-	mkdir -p "$(PREBUILD_PATH)/arm64"
+	mkdir -p "$(PREBUILD_PATH)/iphoneos/arm64"
 	cargo build $(CARGO_FLAGS) --target aarch64-apple-ios
-	cp "target/aarch64-apple-ios/$(CARGO_PROFILE)/lib$(PROJECT_NAME).a" "$(PREBUILD_PATH)/arm64/${LIB_NAME}.a"
+	cp "target/aarch64-apple-ios/$(CARGO_PROFILE)/lib$(PROJECT_NAME).a" "$(PREBUILD_PATH)/iphoneos/arm64/${LIB_NAME}.a"
 
 ios: ios-x86_64-sim ios-arm64-sim ios-arm64
 
