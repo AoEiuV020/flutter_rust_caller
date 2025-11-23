@@ -4,6 +4,10 @@ publish_to: none
 environment:
   sdk: ^3.6.0
 
+workspace:
+  - apps/example
+  - packages/flutter_rust_caller
+
 dev_dependencies:
   melos: ^7.3.0
 
