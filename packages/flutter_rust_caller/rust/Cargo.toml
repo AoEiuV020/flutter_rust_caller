@@ -1,0 +1,17 @@
+[package]
+name = "flutter_rust_caller"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+serde_json = "1.0"
+lazy_static = "1.4"
+
+[profile.release]
+strip = true
+opt-level = 3
+lto = true
+codegen-units = 1
