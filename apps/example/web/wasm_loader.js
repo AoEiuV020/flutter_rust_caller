@@ -48,12 +48,7 @@ async function initWasm() {
      */
     window.rust_call_async = async (method, paramJSON) => {
       try {
-        const result = rustCallAsyncWasm(method, paramJSON);
-        // 如果是 Promise，等待其解决
-        if (result instanceof Promise) {
-          return await result;
-        }
-        // 否则包装在 Promise 中返回
+        const result = await rustCallAsyncWasm(method, paramJSON);
         return result;
       } catch (error) {
         console.error(`[WASM] Error calling rust_call_async(${method}):`, error);

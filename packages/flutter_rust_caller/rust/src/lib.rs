@@ -1,6 +1,7 @@
 pub mod business;
 pub mod call;
 pub mod ffi;
+pub mod sleep;
 
 #[cfg(target_arch = "wasm32")]
 pub mod wasm;
@@ -9,6 +10,7 @@ pub mod wasm;
 pub use business::*;
 pub use call::{call, execute};
 pub use ffi::{rust_call, rust_free_string};
+pub use sleep::*;
 
 #[cfg(target_arch = "wasm32")]
 pub use wasm::{rust_call_wasm, rust_call_async_wasm, wasm_ready};

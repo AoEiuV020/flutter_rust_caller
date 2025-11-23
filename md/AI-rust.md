@@ -113,3 +113,45 @@ window.rust_call	@	wasm_loader.js:27
 testSumLongRunning	@	wasm_test.html:232
 onclick	@	wasm_test.html:137
 1. 不是，我寻思现在wasm-bindgen已经生成了js绑定代码， 就不需要你那个apps/example/web/wasm_loader.js了吧，至少应该需要完全重写使用上apps/example/web/prebuild/flutter_rust_caller.js吧？
+
+1. 异步调用还是报错了， 
+[WASM] Starting initialization...
+wasm_loader.js:19 [WASM] Module loaded and initialized successfully
+wasm_loader.js:67 [WASM] Global functions registered: window.rust_call, window.rust_call_async
+wasm_loader.js:68 [WASM] Initialization complete
+wasm_loader.js:38 [WASM] Error calling rust_call(SumLongRunning): RuntimeError: unreachable
+    at flutter_rust_caller_bg.wasm:0xfbc2
+    at flutter_rust_caller_bg.wasm:0xf1ca
+    at flutter_rust_caller_bg.wasm:0xead6
+    at flutter_rust_caller_bg.wasm:0xfba9
+    at flutter_rust_caller_bg.wasm:0xf8cf
+    at flutter_rust_caller_bg.wasm:0xf8a2
+    at flutter_rust_caller_bg.wasm:0xf819
+    at flutter_rust_caller_bg.wasm:0x64ba
+    at flutter_rust_caller_bg.wasm:0xcdae
+    at rust_call_wasm (flutter_rust_caller.js:163:14)
+
+
+1. 这样太丑了， 应该封装一个自用的sleep， 条件编译，wasm使用特殊处理， 其他平台就线程sleep， 最好单独一个文件封装这种sleep，
+
+卡住了，undo，
+
+1. packages/flutter_rust_caller/rust/src/business.rs:21 这里的thread::sleep在wasm无法使用， 添加一个单独的文件封装sleep函数， 条件编译wasm和非wasm两种实现，
+
+1. sleep也已经回滚了， 全都回滚了，你检查一下重新实现， 
+1. packages/flutter_rust_caller/rust/src/wasm.rs:41 为什么还是非要在导出的地方特殊处理sleep，我不是说了在business调用自己封装的跨平台sleep就好，
+1. wasm.rs 又回滚了， 我希望不要修改这个文件， 你检查一下其他文件， 
+
+1. packages/flutter_rust_caller/rust/src/call.rs:28 为啥， 我搞半天你直接在入口抛了异常，那还搞个屁啊， 
+1. 如果确实 packages/flutter_rust_caller/rust/src/wasm.rs:22 这里不对那就看情况修改，不要有特殊处理就好， 该怎么实现异步好好考虑一下， 要通用， 
+
+1. packages/flutter_rust_caller/rust/src/wasm.rs:33 你™我反复说了不要写死特殊处理，要通用， 你干嘛非要判断函数名在这里休息？我要的真正通用的异步处理， 
+参考 flutter_go_caller/packages/flutter_go_caller/go/wasm_export.go:13
+
+1. apps/example/web/wasm_loader.js:52 你™到底在想什么， 为什么就非要判断函数名特殊处理， 还在加载wasm的代码里模拟延迟到底有什么意义， 
+
+1. packages/flutter_rust_caller/rust/src/call.rs:81 什么鬼东西你是非要特殊处理吗， 之前是特殊处理一个函数， 现在改成特殊处理锁哟函数这究竟解决了什么问题？
+1. 好好参考 flutter_go_caller/packages/flutter_go_caller/go/call.go  flutter_go_caller/packages/flutter_go_caller/go/main.go ， SumLongRunning 本身就该是耗时操作， 不需要管同步异步调用， 进来就耗时，
+
+1. 总之你纠结了那么久最终结论就是同步调用无法sleep？确实无法那就注释说清楚然后放弃， 不要瞎实现，
+1. packages/flutter_rust_caller/rust/src/call.rs:81 不要两份execute, 非要特殊处理

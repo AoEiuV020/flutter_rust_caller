@@ -17,8 +17,26 @@ pub fn sum(a: i32, b: i32) -> i32 {
 }
 
 /// SumLongRunning 模拟耗时操作，返回两个数之和
+/// 非 WASM: 使用 thread::sleep
+/// WASM: 直接返回（WASM 中不支持同步 sleep）
+#[cfg(not(target_arch = "wasm32"))]
 pub fn sum_long_running(a: i32, b: i32) -> i32 {
-    std::thread::sleep(std::time::Duration::from_millis(200));
+    use crate::sleep::sleep_millis;
+    sleep_millis(200);
+    a + b
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn sum_long_running(a: i32, b: i32) -> i32 {
+    a + b
+}
+
+/// SumLongRunning 异步版本（仅在 WASM 中可用）
+/// 在异步上下文中执行耗时操作
+#[cfg(target_arch = "wasm32")]
+pub async fn sum_long_running_async(a: i32, b: i32) -> i32 {
+    use crate::sleep::sleep_async;
+    sleep_async(200).await;
     a + b
 }
 
