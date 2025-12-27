@@ -178,8 +178,8 @@ macos: macos-arm64 macos-amd64
 
 windows:
 	mkdir -p "$(PREBUILD_PATH)/AMD64"
-	cargo build $(CARGO_FLAGS) --target x86_64-pc-windows-gnu
-	cp "target/x86_64-pc-windows-gnu/$(CARGO_PROFILE)/lib$(PROJECT_NAME).dll" "$(PREBUILD_PATH)/AMD64/${LIB_NAME}.dll"
+	cargo build $(CARGO_FLAGS)
+	cp "target/$(CARGO_PROFILE)/$(PROJECT_NAME).dll" "$(PREBUILD_PATH)/AMD64/${LIB_NAME}.dll"
 
 # ============== Linux Targets ==============
 
